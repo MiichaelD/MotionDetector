@@ -14,6 +14,7 @@
 
 #define LOG_FILE "motion.txt"
 
+#include <SPI.h>
 #include <SD.h>
 /*
  The circuit:
@@ -92,7 +93,7 @@ double getSonarDistance(int type){//true if in CM, false Inches
 File logFile;
 
 boolean openFile(){
-  File logFile = SD.open(LOG_FILE, FILE_WRITE);
+  logFile = SD.open(LOG_FILE, FILE_WRITE);
   return logFile;
 }
 
@@ -170,23 +171,18 @@ void printResults(){
   String outputCm = "Centimeters: ";
   String outputInches = "Inches: ";
 
-  double diffCm = msToCm(diffMS);
-  double cm = msToCm(tempMS);
-  double in = msToInches(tempMS);
+  outputDiff.concat( msToCm(diffMS) );
+  outputCm.concat( msToCm(tempMS) );
+  outputInches.concat( msToInches(tempMS) );
   
-  Serial.print(outputDiff);
-  Serial.println(diffCm);
+  Serial.println(outputDiff);
   Serial.print(outputCm);
-  Serial.println(cm);
   Serial.print(outputInches);
-  Serial.println(in);
   Serial.println();
   
   if (openFile()){
-    logFile.print(outputDiff);
-    logFile.println(diffCm);
+    logFile.println(outputDiff);
     logFile.print(outputCm);
-    logFile.println(cm);
     logFile.print(outputInches);
     logFile.println();
     closeFile();
@@ -204,7 +200,6 @@ void(* resetFunc) (void) = 0;//declare reset function at address 0
 void repeater(){
   if(Serial.available()){
     String str = Serial.readString();    
-
     Serial.println(str);
     if (str == "r"){
       Serial.println("Reseting ...");
@@ -214,7 +209,9 @@ void repeater(){
       Serial.println("Printing SD card info ...");
       printSdInfo();
     } else {
-      while(str == "z");
+      while(str == "z"){
+        repeater();
+      }
     }
   }
 }
@@ -245,7 +242,7 @@ void setup(){
   diffMS = 0;
   pinMode(TRIG_PIN, OUTPUT); // Switch signalpin to output
   pinMode(ECHO_PIN, INPUT); // Switch signalpin to input
-  Serial.println("Entering to repeater mode, type 'z' to exit or 'r'to reset.");
+  Serial.println("Entering to repeater mode, type 'z' to exit or 'r' to reset.");
 }
 
 void loop(){
@@ -260,6 +257,5 @@ void loop(){
     timeCounter = millis();
   }
   repeater();
-//  delay(READ_DELAY);
 }
 
